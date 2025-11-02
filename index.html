@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>密码生成器</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#1a1a1a;--fg:#e0e0e0;--acc:#00e5ff}          /* 1. 取消一片绿 */
+body{font-family:system-ui,Segoe UI,Roboto;background:var(--bg);color:var(--fg);
+      display:flex;flex-direction:column;align-items:center;padding:2rem}
+button{padding:.5rem 1rem;margin:.25rem;background:var(--acc);color:#000;border:0;
+       border-radius:4px;cursor:pointer;font-weight:600}
+#out{word-break:break-all;margin-top:1rem;font:1.3rem/1.4 ui-monospace,monospace}
+</style>
+</head>
+<body>
+<h2>CSPRNG 密码生成器</h2>
+
+<label>长度 <input id="len" type="number" min="4" max="256" value="24"></label>
+
+<div style="margin:.5rem 0">
+  <label><input type="radio" name="set" value="base62" checked> Base62</label>
+  <label><input type="radio" name="set" value="safe"> 安全符号</label>
+  <label><input type="radio" name="set" value="full"> 全可见 ASCII</label>
+  <label><input type="radio" name="set" value="custom"> 自定义</label>
+</div>
+<div id="customBox" style="display:none">
+  自定义字符集 <input id="customTxt" value="!@#$%^&*()-_=+[]{}|;:,.<>?">
+</div>
+
+<button onclick="go()">生成</button>
+<button onclick="cp()">复制</button>
+<div id="out">-</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const sets = {
+  base62: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
+  safe:   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+',
+  full:   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?/`~'
+};
+document.querySelectorAll('[name=set]').forEach(r=>r.onchange=()=>
+  $('customBox').style.display = r.value==='custom'?'block':'none');
+
+function rand(n){
+  const max = 0xffffffff - 0xffffffff % n;
+  let x; do x = crypto.getRandomValues(new Uint32Array(1))[0]; while(x>=max);
+  return x % n;
+}
+function go(){
+  const len = Math.min(256,Math.max(4,+$('len').value));
+  $('len').value = len;
+  const setKey = document.querySelector('[name=set]:checked').value;
+  const chars = setKey==='custom' ? $('customTxt').value : sets[setKey];
+  if(!chars){ alert('字符集不能为空'); return; }
+  $('out').textContent = Array.from({length:len},()=>chars[rand(chars.length)]).join('');
+}
+function cp(){
+  navigator.clipboard.writeText($('out').textContent).then(()=>alert('已复制'));
+}
+go();
+</script>
+</body>
+</html>
